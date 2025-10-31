@@ -1,0 +1,21 @@
+root_dir: "/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/cubes_plate"
+stl_filename: "cubes_layer_bs0.stl"
+# stl_filename: "bf8_sls_ascii_mini.stl"
+doc_prefix: "Steel_cubes_plate_"
+
+faces_num: 12
+gui: False
+tolerance: 0.1
+
+constraints:
+  fixed_faces_file: "fixed_faces.txt"
+  under_pressure_file: "under_pressure.txt"
+  # prefix: "Edge"
+  TOUCH_UNIT_NAME_PREFIX: "Vertex"
+
+contacts:
+  activate_friction: false
+  cc_pairs_file: "cc_pairs.csv"
+  centers_dist_for_contact: 50.0   # mm
+  friction_coeff: 0.3
+  slope_coeff: 1.0

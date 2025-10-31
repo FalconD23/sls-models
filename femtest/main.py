@@ -17,7 +17,7 @@ def gen_list_from_txt(path, prefix='Face'):
     return list(map(int, face_numbers))
 
 # relative path doesn't work with freecad-python-cls running
-config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/tetrahedrons_plate/main_config.yaml")
+config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/cubes_plate/main_config.yaml")
 with open(config_path, "r") as f:
     cfg = yaml.safe_load(f)
 
