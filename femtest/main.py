@@ -7,19 +7,7 @@ import re
 import yaml
 from pathlib import Path
 
-# config_path = Path("/home/ubnps23/tecHub/SLS_dev/CAD_testing/cad_analysis/planes_cmp/tetrahedrons_sls/tetra_sls.yaml")
-config_path = Path("/home/ubnps23/tecHub/SLS_dev/CAD_testing/cad_analysis/planes_cmp/bev_hex_prisms/main_config.yaml")
-with open(config_path, "r") as f:
-    cfg = yaml.safe_load(f)
-
-
-ROOT_DIR = cfg["root_dir"]
-STL_FILENAME = cfg["stl_filename"]
-FACES_NUM = cfg["faces_num"]    
-GUI = cfg["gui"]
-TOLERANCE = cfg["tolerance"]
-
-UNDER_PRESSURE_FILENAME = cfg["constraints"]["under_pressure_file"]
+ 
 
 def gen_list_from_txt(path, prefix='Face'):
     text = ''
@@ -28,15 +16,33 @@ def gen_list_from_txt(path, prefix='Face'):
     face_numbers = re.findall(rf'{prefix}(\d+)', text)
     return list(map(int, face_numbers))
 
-CONSTRAINT_FIXED_FILENAME = cfg["constraints"]["fixed_faces_file"]
+# relative path doesn't work with freecad-python-cls running
+config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_hex_prisms_plate/main_config.yaml")
+with open(config_path, "r") as f:
+    cfg = yaml.safe_load(f)
+
+
+
+ROOT_DIR = cfg["root_dir"]
+def with_root(path):
+    return f"{ROOT_DIR}/{path}"
+
+STL_FILENAME = with_root(cfg["stl_filename"])
+FACES_NUM = cfg["faces_num"]    
+GUI = cfg["gui"]
+TOLERANCE = cfg["tolerance"]
+
+UNDER_PRESSURE_FILENAME = with_root(cfg["constraints"]["under_pressure_file"])
+
+CONSTRAINT_FIXED_FILENAME = with_root(cfg["constraints"]["fixed_faces_file"])
 CONSTRAINT_FIXED_FACES = gen_list_from_txt(CONSTRAINT_FIXED_FILENAME)
 
-TOUCH_UNIT_NAME_PREFIX = ['Face', 'Vertex', 'Edge'][2]
+TOUCH_UNIT_NAME_PREFIX = cfg["constraints"]["TOUCH_UNIT_NAME_PREFIX"]
 FACES_UNDER_PRESSURE = gen_list_from_txt(path=UNDER_PRESSURE_FILENAME, 
                                          prefix=TOUCH_UNIT_NAME_PREFIX)
 
 FRICTION_ACTIVATE = cfg["contacts"]["activate_friction"]
-CC_FILENAME = cfg["contacts"]["cc_pairs_file"]
+CC_FILENAME = with_root(cfg["contacts"]["cc_pairs_file"])
 CENTERS_DIST_FOR_CONTACT = cfg["contacts"]["centers_dist_for_contact"]
 FRICTION_COEFF = cfg["contacts"]["friction_coeff"]
 SLOPE_COEFF = cfg["contacts"]["slope_coeff"]

@@ -29,14 +29,14 @@ def main():
     PI = np.pi
     RADIUS = 4 * (1e2 * 1300 / 7500)
     HEIGHT = 1 * 1e2
-    BEV_ANGLE = np.radians(40)
+    BEV_ANGLE = np.radians(30)
     
     # Create geometry configuration
     config = GeometryConfig(
         radius=RADIUS,
         height=HEIGHT,
         bev_angle=BEV_ANGLE,
-        size_trick=0.6  #! 1.1 Use the more conservative value from generate_unit_block.py
+        size_trick=1.1  #! 1.1 Use the more conservative value from generate_unit_block.py
     )
     
     # Create layer generator WITHOUT bending (bending causes QHull errors)

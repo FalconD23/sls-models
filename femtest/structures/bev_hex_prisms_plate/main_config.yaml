@@ -1,20 +1,21 @@
-root_dir: "/home/ubnps23/tecHub/SLS_dev/CAD_testing/cad_analysis/planes_cmp/bev_hex_prisms"
-stl_filename: "/home/ubnps23/tecHub/SLS_dev/bev_f8_legacy_repo_copy/stl_layer_gen/bf8_sls_ascii_mini.stl"
-doc_prefix: "Steel_bev_hex_prisms_"
+root_dir: "/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_hex_prisms_plate"
+stl_filename: "bf8_ascii_30.0deg_radius_69.3mm_height_100.0mm.stl"
+# stl_filename: "bf8_sls_ascii_mini.stl"
+doc_prefix: "Steel_bev_hex_prisms_plate_"
 
 faces_num: 20
-gui: True
+gui: False
 tolerance: 0.1
 
 constraints:
-  fixed_faces_file: "/home/ubnps23/tecHub/SLS_dev/CAD_testing/cad_analysis/planes_cmp/bev_hex_prisms/fixed_faces.txt"
-  under_pressure_file: "/home/ubnps23/tecHub/SLS_dev/CAD_testing/cad_analysis/planes_cmp/bev_hex_prisms/under_pressure.txt"
+  fixed_faces_file: "fixed_faces.txt"
+  under_pressure_file: "under_pressure.txt"
   # prefix: "Edge"
   TOUCH_UNIT_NAME_PREFIX: "Face"
 
 contacts:
   activate_friction: false
-  cc_pairs_file: "/home/ubnps23/tecHub/SLS_dev/CAD_testing/cad_analysis/planes_cmp/bev_hex_prisms/cc_pairs.csv"
+  cc_pairs_file: "cc_pairs.csv"
   centers_dist_for_contact: 50.0   # mm
   friction_coeff: 0.3
   slope_coeff: 1.0
