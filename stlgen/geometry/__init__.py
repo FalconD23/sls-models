@@ -10,11 +10,13 @@ from .coordinate_system import CoordinateSystem
 from .beveled_prism import BeveledPrism
 from .prism_layer import PrismLayer
 from .convex_solver import ConvexHullSolver
+from .convex_polyhedron import ConvexPolyhedron
 
 __all__ = [
     'GeometryConfig',
     'CoordinateSystem', 
     'BeveledPrism',
     'PrismLayer',
-    'ConvexHullSolver'
+    'ConvexHullSolver',
+    'ConvexPolyhedron'
 ]
