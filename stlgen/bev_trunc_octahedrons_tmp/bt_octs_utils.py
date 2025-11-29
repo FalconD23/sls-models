@@ -1,18 +1,15 @@
-"""
-Test for truncated octahedron using ConvexPolyhedron.
-
-This test creates a standard truncated octahedron (Archimedean solid)
-with 14 faces (6 square + 8 hexagonal) and 24 vertices.
-"""
+'''
+элементарные функции для прототипирования bt_octs
+и сверка в freecad
+'''
 
 import numpy as np
 import sys
 import os
 from pathlib import Path
-
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from geometry.convex_polyhedron import ConvexPolyhedron
 
 
@@ -266,107 +263,6 @@ def create_truncated_octahedron(
 
 
 
-def test_truncated_octahedron():
-    """Test truncated octahedron creation and properties."""
-    print("=" * 60)
-    print("Тест: Усеченный октаэдр")
-    print("=" * 60)
-    
-    # Parameters
-    scale_0 = 10
-    a, b, c = 0.8 * scale_0, 0.8 * scale_0, 0.6 * scale_0
-    alpha_deg = 35.0
-    
-    print(f"\nПараметры: a={a}, b={b}, c={c}, alpha={alpha_deg}°")
-    
-    # Create truncated octahedron
-    truncated_oct, params = create_truncated_octahedron(a=a, b=b, c=c, alpha_deg=alpha_deg)
-    
-    print(f"\n✓ Создан полиэдр: {truncated_oct}")
-    print(f"  Плоскостей: {len(truncated_oct.plane_points)} (должно быть 14)")
-    print(f"  Троек вершин: {len(truncated_oct.vertex_triplets)}")
-    
-    # Build vertices
-    print("\nВычисление вершин...")
-    vertices = truncated_oct.build_vertices()
-    print(f"✓ Вершины построены: {len(vertices)} (должно быть 24)")
-    
-    # Verify we have vertices (may be 12 or 24 depending on hex face definition)
-    # For truncated octahedron, we should have 24 vertices, but some combinations
-    # may give only 12 unique vertices if hex faces are not correctly defined
-    print(f"\n⚠️ Note: Got {len(vertices)} unique vertices")
-    if len(vertices) < 24:
-        print(f"   Warning: Expected 24 vertices for standard truncated octahedron")
-        print(f"   This may indicate hex faces need different distances/orientations")
-    
-    # For now, accept any number of vertices >= 4 for convex hull
-    assert len(vertices) >= 4, f"Need at least 4 vertices for convex hull, got {len(vertices)}"
-    
-    # Build convex hull
-    print("\nПостроение выпуклой оболочки...")
-    faces = truncated_oct.build_convex_hull()
-    print(f"✓ Convex hull построен: {len(faces)} треугольных граней")
-    
-    # Verify we have faces
-    assert len(faces) > 0, "Should have at least some faces"
-    
-    # Export to STL
-    stl_filename = f"trunc_oct_a{a}_b{b}_c{c}_alpha{alpha_deg}.stl"
-    output_file = Path(__file__).parent / stl_filename
-    solid_name = f"trunc_oct_a{a}_b{b}_c{c}_alpha{alpha_deg}"
-    print(f"\nЭкспорт в STL: {output_file.name}")
-    truncated_oct.to_stl(str(output_file), solid_name=solid_name, format="ascii")
-    print(f"✓ STL файл создан: {stl_filename}")
-    
-    # Verify file exists and is not empty
-    assert output_file.exists(), "STL file should be created"
-    assert output_file.stat().st_size > 0, "STL file should not be empty"
-    
-    print(f"\n✓ Размер файла: {output_file.stat().st_size} байт")
-    
-    # Visualize with matplotlib
-    try:
-        import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
-        
-        print("\nВизуализация...")
-        fig = plt.figure(figsize=(14, 12))
-        ax = fig.add_subplot(111, projection='3d')
-        
-        # Create visualization
-        truncated_oct.visualize(
-            ax=ax,
-            show_planes=True,
-            show_edges=True,
-            show_vertices=True,
-            show_polyhedron=True,
-            scale_normal=3.0
-        )
-        ax.set_title(f'bev trunc octs: a={a}, b={b}, c={c}, α={alpha_deg}°', fontsize=14)
-        
-        # Save visualization to file
-        viz_filename = f"trunc_oct_a{a}_b{b}_c{c}_alpha{alpha_deg}.png"
-        viz_file = Path(__file__).parent / viz_filename
-        plt.savefig(str(viz_file), dpi=150, bbox_inches='tight')
-        print(f"✓ Визуализация сохранена: {viz_filename}")
-        
-        # Display visualization
-        print("  Отображение графика... (закройте окно для продолжения)")
-        plt.show()  # Отображает график в окне
-        
-    except ImportError:
-        print("⚠️ Matplotlib не доступен, визуализация пропущена")
-    except Exception as e:
-        print(f"⚠️ Ошибка при визуализации: {e}")
-    
-    print("\n" + "=" * 60)
-    print("✅ Все тесты пройдены успешно!")
-    print("=" * 60)
-
-
-
-
-
 def translate_polyhedron(polyhedron: ConvexPolyhedron, offset: np.ndarray) -> ConvexPolyhedron:
     """
     Create a translated copy of polyhedron.
@@ -462,185 +358,157 @@ def rotate_polyhedron(
 
 
 
+def generate_tessellation_centers(
+    nx: int,
+    ny: int,
+    nz: int,
+    a: float,
+    b: float,
+    c: float
+) -> tuple[list[np.ndarray], list[tuple[int, int, int, bool]]]:
+    """
+    Generate centers for space-filling tessellation with truncated octahedrons.
+    
+    Усечённый октаэдр заполняет пространство так, что каждый блок имеет 14 соседей:
+    - 6 соседей через квадратные грани (по осям ±X, ±Y, ±Z) - расстояние 2a, 2b, 2c
+    - 8 соседей через шестиугольные грани (по диагоналям) - расстояние (a, b, c) в направлениях (±1, ±1, ±1)
+    
+    Структура замощения использует две подрешётки:
+    - Основная решётка: центры в (2a*i, 2b*j, 2c*k)
+    - Смещённая решётка: центры в (2a*i + a, 2b*j + b, 2c*k + c) относительно основной решётки
+    
+    Блоки смещённой решётки имеют тот же тип (A/B), что и ближайший блок основной решётки.
+    
+    Args:
+        nx: Number of blocks along X axis (основная решётка)
+        ny: Number of blocks along Y axis (основная решётка)
+        nz: Number of blocks along Z axis (основная решётка)
+        a: Block parameter a (half-size along X)
+        b: Block parameter b (half-size along Y)
+        c: Block parameter c (half-size along Z)
+        
+    Returns:
+        Tuple of (list of centers, list of (i, j, k, is_offset) indices)
+        where is_offset=True для блоков смещённой решётки
+    """
+    centers = []
+    indices = []
+    
+    # Расстояние между центрами соседних блоков основной решётки
+    # Для соприкосновения квадратных граней: расстояние = 2a, 2b, 2c
+    step_x = 2.0 * a
+    step_y = 2.0 * b
+    step_z = 2.0 * c
+    
+    # Вычисляем общий размер слоя (основная решётка)
+    total_size_x = (nx - 1) * step_x if nx > 1 else 0
+    total_size_y = (ny - 1) * step_y if ny > 1 else 0
+    total_size_z = (nz - 1) * step_z if nz > 1 else 0
+    
+    # Смещение для центрирования (чтобы центр слоя был в начале координат)
+    offset_x = -total_size_x / 2.0
+    offset_y = -total_size_y / 2.0
+    offset_z = -total_size_z / 2.0
+    
+    # ========================================================================
+    # ОСНОВНАЯ РЕШЁТКА: центры в (2a*i, 2b*j, 2c*k)
+    # ========================================================================
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                center_x = offset_x + i * step_x
+                center_y = offset_y + j * step_y
+                center_z = offset_z + k * step_z
+                center = np.array([center_x, center_y, center_z])
+                
+                centers.append(center)
+                indices.append((i, j, k, False))  # False = основная решётка
+    
+    # ========================================================================
+    # СМЕЩЁННАЯ РЕШЁТКА: центры в (2a*i + a, 2b*j + b, 2c*k + c)
+    # Эти блоки соприкасаются с блоками основной решётки через шестиугольные грани
+    # ========================================================================
+    # Для смещённой решётки нужно на 1 больше по каждой оси, чтобы заполнить промежутки
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                # Смещение на (a, b, c) относительно основной решётки
+                center_x = offset_x + i * step_x + a
+                center_y = offset_y + j * step_y + b
+                center_z = offset_z + k * step_z + c
+                center = np.array([center_x, center_y, center_z])
+                
+                centers.append(center)
+                # Для смещённой решётки используем те же индексы (i, j, k), но is_offset=True
+                # Тип блока определяется по индексам ближайшего блока основной решётки
+                indices.append((i, j, k, True))  # True = смещённая решётка
+
+    return centers, indices
 
 
-def test_set_bt_octs():
+def LayerGen(
+    nx: int,
+    ny: int,
+    nz: int,
+    a: float,
+    b: float,
+    c: float,
+    alpha_deg: float
+) -> list[ConvexPolyhedron]:
     """
-    Test: Create multiple truncated octahedrons at different centers.
+    Generate a centered layer of truncated octahedrons with proper space-filling tessellation.
     
-    Creates a set of blocks, visualizes them together, and exports to STL.
+    Creates a 3D grid of blocks with proper tessellation where each block has 14 neighbors
+    (6 through square faces + 8 through hexagonal faces).
+    
+    Blocks have two types:
+    - Type A: no rotation
+    - Type B: rotated 90° around Z axis
+    
+    Args:
+        nx: Number of blocks along X axis
+        ny: Number of blocks along Y axis
+        nz: Number of blocks along Z axis
+        a: Block parameter a (half-size along X)
+        b: Block parameter b (half-size along Y)
+        c: Block parameter c (half-size along Z)
+        alpha_deg: Bevel angle in degrees
+        
+    Returns:
+        List of ConvexPolyhedron objects
     """
-    print("=" * 60)
-    print("Тест: Набор усечённых октаэдров")
-    print("=" * 60)
+    blocks = []
     
-    # Список конфигураций: (center, a, b, c, alpha_deg)
-    block_configs = [
-        (np.array([0, 0, 0]), 8.0, 8.0, 6.0, 35.0),
-        (np.array([16, 0, 0]), 8.0, 8.0, 6.0, 35.0),
-        # (np.array([0, 16, 0]), 8.0, 8.0, 6.0, 35.0),
-        
-        (np.array([8, 8, 6]), 8.0, 8.0, 6.0, 35.0),
-        (np.array([0, 0, -12]), 8.0, 8.0, 6.0, 35.0),
-        (np.array([0, 0, 12]), 8.0, 8.0, 6.0, 35.0),
-    ]
-    inverse_list = [1]
+    # Генерируем центры правильного замощения
+    centers, indices = generate_tessellation_centers(nx, ny, nz, a, b, c)
     
-    print(f"\nСоздание {len(block_configs)} блоков...")
-    
-    polyhedrons = []
-    all_params = []
-    
-    for i, (center, a, b, c, alpha_deg) in enumerate(block_configs):
-        print(f"\nБлок {i+1}/{len(block_configs)}: center={center}, a={a}, b={b}, c={c}, α={alpha_deg}°")
+    # Создаём блоки в каждом центре
+    for idx, (block_center, (i, j, k, is_offset)) in enumerate(zip(centers, indices)):
+        # Определяем тип блока по решающему правилу
+        # Тип определяется по индексам ближайшего блока основной решётки (i, j, k)
+        # Тип A: четная сумма индексов, Тип B: нечетная сумма
+        # Блоки смещённой решётки имеют тот же тип, что и ближайший блок основной решётки
+        is_type_b = (i + j + k) % 2 == 1
         
-        # Создаём полиэдр в начале координат
-        poly, params = create_truncated_octahedron(a=a, b=b, c=c, alpha_deg=alpha_deg)
+        # Создаём блок в нужном центре
+        poly, _ = create_truncated_octahedron(
+            a=a, b=b, c=c, alpha_deg=alpha_deg,
+            center=block_center
+        )
         
-        # Перемещаем в нужный центр
-        if i in inverse_list:
-            poly = rotate_polyhedron(poly)
-        
-        translated_poly = translate_polyhedron(poly, center)
+        # Если тип B, поворачиваем блок вокруг его центра
+        if is_type_b:
+            poly = rotate_polyhedron(
+                poly,
+                axis=np.array([0, 0, 1]),
+                angle_deg=90.0,
+                center=block_center
+            )
         
         # Строим вершины и грани
-        vertices = translated_poly.build_vertices()
-        faces = translated_poly.build_convex_hull()
+        poly.build_vertices()
+        poly.build_convex_hull()
         
-        print(f"  ✓ Вершин: {len(vertices)}, Граней: {len(faces)}")
-        
-        polyhedrons.append(translated_poly)
-        all_params.append({'center': center, 'a': a, 'b': b, 'c': c, 'alpha_deg': alpha_deg})
+        blocks.append(poly)
     
-    # polyhedrons = [translate_polyhedron(poly, np.array([0, 0, 0])) for i, poly in enumerate(polyhedrons) if i in [1, 2]]
-
-    # Визуализация всех блоков на одном графике
-    try:
-        import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
-        from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-        
-        print("\nВизуализация всех блоков...")
-        fig = plt.figure(figsize=(16, 12))
-        ax = fig.add_subplot(111, projection='3d')
-        
-        colors = ['cyan', 'magenta', 'yellow', 'green', 'orange', 'red', 'blue', 'purple']
-        
-        for i, poly in enumerate(polyhedrons):
-            color = colors[i % len(colors)]
-            
-            # Добавляем грани с разными цветами
-            if poly.faces:
-                poly_collection = []
-                for face in poly.faces:
-                    poly_collection.append(face)
-                
-                poly3d = Poly3DCollection(
-                    poly_collection,
-                    alpha=0.4,
-                    facecolor=color,
-                    edgecolor='black',
-                    linewidth=1.0
-                )
-                ax.add_collection3d(poly3d)
-            
-            # Добавляем рёбра для каждого полиэдра
-            if poly.vertices is not None and len(poly.vertices) >= 4:
-                try:
-                    from scipy.spatial import ConvexHull
-                    hull = ConvexHull(poly.vertices)
-                    edges_set = set()
-                    for simplex in hull.simplices:
-                        edges_set.add(tuple(sorted([simplex[0], simplex[1]])))
-                        edges_set.add(tuple(sorted([simplex[1], simplex[2]])))
-                        edges_set.add(tuple(sorted([simplex[2], simplex[0]])))
-                    
-                    for edge_tuple in edges_set:
-                        v1 = poly.vertices[edge_tuple[0]]
-                        v2 = poly.vertices[edge_tuple[1]]
-                        ax.plot(
-                            [v1[0], v2[0]],
-                            [v1[1], v2[1]],
-                            [v1[2], v2[2]],
-                            color='black',
-                            linewidth=1.5,
-                            alpha=0.7
-                        )
-                except Exception:
-                    pass
-        
-        # Настройка осей
-        all_vertices = []
-        for poly in polyhedrons:
-            if poly.vertices is not None:
-                all_vertices.append(poly.vertices)
-        
-        if all_vertices:
-            all_vertices = np.vstack(all_vertices)
-            center = np.mean(all_vertices, axis=0)
-            max_dist = np.max(np.linalg.norm(all_vertices - center, axis=1)) * 1.2
-            
-            ax.set_xlim(center[0] - max_dist, center[0] + max_dist)
-            ax.set_ylim(center[1] - max_dist, center[1] + max_dist)
-            ax.set_zlim(center[2] - max_dist, center[2] + max_dist)
-        
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        ax.set_title(f'Набор усечённых октаэдров ({len(polyhedrons)} блоков)', fontsize=14)
-        
-        # Сохранение визуализации
-        viz_filename = f"set_bt_octs_{len(polyhedrons)}blocks.png"
-        viz_file = Path(__file__).parent / viz_filename
-        plt.savefig(str(viz_file), dpi=150, bbox_inches='tight')
-        print(f"✓ Визуализация сохранена: {viz_filename}")
-        
-        plt.show()
-        
-    except ImportError:
-        print("⚠️ Matplotlib не доступен, визуализация пропущена")
-    except Exception as e:
-        print(f"⚠️ Ошибка при визуализации: {e}")
-    
-    # Экспорт всех блоков в один STL файл
-    print("\nЭкспорт всех блоков в STL...")
-    
-    from export.stl_exporter import STLExporter
-    
-    exporter = STLExporter(tolerance=1e-5)
-    
-    # Собираем все грани всех полиэдров
-    all_blocks = []
-    for poly in polyhedrons:
-        if poly.faces:
-            all_blocks.append(poly.faces)
-    
-    if not all_blocks:
-        print("⚠️ Нет граней для экспорта")
-        return
-    
-    # Формируем имя файла
-    stl_filename = f"set_bt_octs_{len(polyhedrons)}blocks.stl"
-    output_file = Path(__file__).parent / stl_filename
-    solid_name = f"set_bt_octs_{len(polyhedrons)}blocks"
-    
-    # Экспортируем
-    exporter.write_stl(
-        blocks=all_blocks,
-        filename=str(output_file),
-        solid_name=solid_name,
-        format="ascii"
-    )
-    
-    print(f"✓ STL файл создан: {stl_filename}")
-    print(f"✓ Размер файла: {output_file.stat().st_size} байт")
-    
-    print("\n" + "=" * 60)
-    print("✅ Тест завершён успешно!")
-    print("=" * 60)
-
-
-if __name__ == "__main__":
-    # test_truncated_octahedron()
-    test_set_bt_octs()  # Раскомментируйте для запуска набора блоков
-
+    return blocks
