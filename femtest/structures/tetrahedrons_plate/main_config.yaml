@@ -3,14 +3,14 @@ stl_filename: "tetrah_sls.stl"
 doc_prefix: "Steel_tetrahedrons_"
 
 faces_num: 4
-gui: False
-faces_num: 4
+gui: True
 tolerance: 0.1
 
 constraints:
   fixed_faces_file: "fixed_faces.txt"
   under_pressure_file: "under_pressure.txt"
   TOUCH_UNIT_NAME_PREFIX: "Edge"
+  border_tolerance: 0.95
 
 contacts:
   activate_friction: false

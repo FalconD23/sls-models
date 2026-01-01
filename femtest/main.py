@@ -17,7 +17,8 @@ def gen_list_from_txt(path, prefix='Face'):
     return list(map(int, face_numbers))
 
 # relative path doesn't work with freecad-python-cls running
-config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/cubes_plate/main_config.yaml")
+# tetrahedrons_plate, cubes_plate, bev_hex_prisms_plate
+config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_hex_prisms_plate/main_config.yaml")
 with open(config_path, "r") as f:
     cfg = yaml.safe_load(f)
 
@@ -38,6 +39,7 @@ CONSTRAINT_FIXED_FILENAME = with_root(cfg["constraints"]["fixed_faces_file"])
 CONSTRAINT_FIXED_FACES = gen_list_from_txt(CONSTRAINT_FIXED_FILENAME)
 
 TOUCH_UNIT_NAME_PREFIX = cfg["constraints"]["TOUCH_UNIT_NAME_PREFIX"]
+BORDER_TOLERANCE = cfg["constraints"]["border_tolerance"]
 FACES_UNDER_PRESSURE = gen_list_from_txt(path=UNDER_PRESSURE_FILENAME, 
                                          prefix=TOUCH_UNIT_NAME_PREFIX)
 
@@ -48,7 +50,7 @@ FRICTION_COEFF = cfg["contacts"]["friction_coeff"]
 SLOPE_COEFF = cfg["contacts"]["slope_coeff"]
 
 doc_prefix = cfg["doc_prefix"]
-pressures_N_force = [i*1e7*1e0 / (10) for i in range(1, 3)]  # потому что прилагаются 3 силы к 3 вершинам
+pressures_N_force = [i*1e7*1e0 / (10) for i in range(1, 2)]  # потому что прилагаются 3 силы к 3 вершинам
 results = []
 
 # doc = App.newDocument("Imported_3D_Model_FEM")
@@ -140,14 +142,70 @@ for curr_i, force in enumerate(pressures_N_force, start=1):
     material_object.Material = mat
     analysis_object.addObject(material_object) 
 
-    # 10. Фиксируем поверхности многогранников
-    idx_faces_list = CONSTRAINT_FIXED_FACES
-    fixed_faces_list = [f"Face{i}" for i in idx_faces_list]
-    # Создаем объект фиксирующего ограничения для компаунда
-    fixed_constraint = ObjectsFem.makeConstraintFixed(doc, "FemConstraintFixed")
-    # Задаем ссылки на нужные грани компаунда
-    fixed_constraint.References = [(cmp_obj, face) for face in fixed_faces_list] 
-    analysis_object.addObject(fixed_constraint)
+    # 10. Фиксируем внешние грани блоков (относительно центра конструкции)
+
+    #* legacy version with list of faces to fix
+    # idx_faces_list = CONSTRAINT_FIXED_FACES
+    # fixed_faces_list = [f"Face{i}" for i in idx_faces_list]
+    # # Создаем объект фиксирующего ограничения для компаунда
+    # fixed_constraint = ObjectsFem.makeConstraintFixed(doc, "FemConstraintFixed")
+    # # Задаем ссылки на нужные грани компаунда
+    # fixed_constraint.References = [(cmp_obj, face) for face in fixed_faces_list] 
+    # analysis_object.addObject(fixed_constraint)
+
+    #* new version with tolerance and centroid relative
+    # Найдём центры всех блоков
+    centers = []
+    for solid in solids_list:
+        com = solid.Shape.CenterOfMass
+        centers.append((solid, com))
+
+    if not centers:
+        print("Нет блоков для анализа центра структуры")
+    else:
+        # Вычисляем центр всей структуры (средний центр всех центров)
+        avg_x = sum(c[1].x for c in centers) / len(centers)
+        avg_y = sum(c[1].y for c in centers) / len(centers)
+        avg_z = sum(c[1].z for c in centers) / len(centers)
+
+        center_struct = FreeCAD.Vector(avg_x, avg_y, avg_z)
+        print(f"Center of structure at ({avg_x:.3f}, {avg_y:.3f}, {avg_z:.3f})")
+
+        # Находим максимальные отклонения от центра структуры
+        max_dx = max(abs(c[1].x - avg_x) for c in centers)
+        max_dy = max(abs(c[1].y - avg_y) for c in centers)
+        max_dz = max(abs(c[1].z - avg_z) for c in centers)
+
+        # порог (0.95)
+        border_tolerance = BORDER_TOLERANCE
+        thr_dx = max_dx * border_tolerance
+        thr_dy = max_dy * border_tolerance
+        thr_dz = max_dz * border_tolerance
+
+        print(f"Max deviations: dX={max_dx:.3f}, dY={max_dy:.3f}, dZ={max_dz:.3f}")
+        print(f"Thresholds dX>={thr_dx:.3f}, dY>={thr_dy:.3f}, dZ>={thr_dz:.3f}")
+
+        # Собираем список граней для фиксации
+        faces_to_fix = []
+
+        for solid, com in centers:
+            dx = abs(com.x - avg_x)
+            dy = abs(com.y - avg_y)
+            dz = abs(com.z - avg_z)
+
+            # если центр блока близок к границе по любой из осей
+            if dx >= thr_dx or dy >= thr_dy or dz >= thr_dz:
+                for idx, face in enumerate(solid.Shape.Faces, start=1):
+                    face_name = f"Face{idx}"
+                    faces_to_fix.append((solid, face_name))
+                print(f"Block {solid.Name} at ({com.x:.3f},{com.y:.3f},{com.z:.3f}) FIXED")
+
+        # Создаём constraint fixed
+        fixed_constraint = ObjectsFem.makeConstraintFixed(doc, "FemConstraintFixed")
+        fixed_constraint.References = faces_to_fix
+        analysis_object.addObject(fixed_constraint)
+
+        print(f"Total fixed faces: {len(faces_to_fix)}")
 
 
     #? 11. Автоматическое задание контактных ограничений с трением между соседними блоками
