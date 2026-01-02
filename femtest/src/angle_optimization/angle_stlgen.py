@@ -85,7 +85,7 @@ def generate_stl_for_angle(
         generator = LayerGenerator(config)
         
         # Generate filename with angle
-        filename = f"run_angle_bev_hex_prisms.stl"
+        filename = f"run_angle_bev_hex_prisms_{angle_degrees:.1f}deg.stl"
         solid_name = f"run_angle_bev_hex_prisms"
         
         # Generate complete layer with all processing steps

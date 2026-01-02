@@ -11,6 +11,7 @@ constraints:
   under_pressure_file: "under_pressure.txt"
   TOUCH_UNIT_NAME_PREFIX: "Edge"
   border_tolerance: 0.95
+  apply_tolerance: 0.15
 
 contacts:
   activate_friction: false

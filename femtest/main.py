@@ -6,8 +6,8 @@ import re
 # Hydra
 import yaml
 from pathlib import Path
+                                                            
 
- 
 
 def gen_list_from_txt(path, prefix='Face'):
     text = ''
@@ -17,8 +17,8 @@ def gen_list_from_txt(path, prefix='Face'):
     return list(map(int, face_numbers))
 
 # relative path doesn't work with freecad-python-cls running
-# tetrahedrons_plate, cubes_plate, bev_hex_prisms_plate
-config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_hex_prisms_plate/main_config.yaml")
+# tetrahedrons_plate, cubes_plate, bev_hex_prisms_plate, bev_trunc_octahedrons
+config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_trunc_octahedrons/main_config.yaml")
 with open(config_path, "r") as f:
     cfg = yaml.safe_load(f)
 
@@ -34,6 +34,7 @@ GUI = cfg["gui"]
 TOLERANCE = cfg["tolerance"]
 
 UNDER_PRESSURE_FILENAME = with_root(cfg["constraints"]["under_pressure_file"])
+LIST_MODE = False
 
 CONSTRAINT_FIXED_FILENAME = with_root(cfg["constraints"]["fixed_faces_file"])
 CONSTRAINT_FIXED_FACES = gen_list_from_txt(CONSTRAINT_FIXED_FILENAME)
@@ -41,7 +42,8 @@ CONSTRAINT_FIXED_FACES = gen_list_from_txt(CONSTRAINT_FIXED_FILENAME)
 TOUCH_UNIT_NAME_PREFIX = cfg["constraints"]["TOUCH_UNIT_NAME_PREFIX"]
 BORDER_TOLERANCE = cfg["constraints"]["border_tolerance"]
 FACES_UNDER_PRESSURE = gen_list_from_txt(path=UNDER_PRESSURE_FILENAME, 
-                                         prefix=TOUCH_UNIT_NAME_PREFIX)
+                                        prefix=TOUCH_UNIT_NAME_PREFIX)
+APPLY_TOLERANCE = cfg["constraints"]["apply_tolerance"]
 
 FRICTION_ACTIVATE = cfg["contacts"]["activate_friction"]
 CC_FILENAME = with_root(cfg["contacts"]["cc_pairs_file"])
@@ -180,7 +182,7 @@ for curr_i, force in enumerate(pressures_N_force, start=1):
         border_tolerance = BORDER_TOLERANCE
         thr_dx = max_dx * border_tolerance
         thr_dy = max_dy * border_tolerance
-        thr_dz = max_dz * border_tolerance
+        thr_dz = max_dz * border_tolerance * 20
 
         print(f"Max deviations: dX={max_dx:.3f}, dY={max_dy:.3f}, dZ={max_dz:.3f}")
         print(f"Thresholds dX>={thr_dx:.3f}, dY>={thr_dy:.3f}, dZ>={thr_dz:.3f}")
@@ -259,37 +261,134 @@ for curr_i, force in enumerate(pressures_N_force, start=1):
             cc.Slope = SLOPE_COEFF  #!<----------------
             analysis_object.addObject(cc)
 
-
-    # 12. Применяем внешние силы
+    # 12-LIST VERSION. Применяем внешние силы
+    if LIST_MODE:
     # Здесь направление силы вычисляется функцией, а величина силы масштабируется в зависимости от номера грани.
-    def calculate_direction(face_number): # Пример логики: сила направлена вдоль оси -Z, но величина может зависеть от номера
-        return FreeCAD.Vector(0, 0, -1)  # [FreeCAD.Vector: https://wiki.freecad.org/FreeCAD_Vector]
+        def calculate_direction(face_number): # Пример логики: сила направлена вдоль оси -Z, но величина может зависеть от номера
+            return FreeCAD.Vector(0, 0, -1)  # [FreeCAD.Vector: https://wiki.freecad.org/FreeCAD_Vector]
 
-    base_force = force / len(FACES_UNDER_PRESSURE) # базовая величина силы
+        base_force = force / len(FACES_UNDER_PRESSURE) # базовая величина силы
 
-    faces_under_pressure_idx = FACES_UNDER_PRESSURE
-    # faces_under_pressure_idx = [443, 421, 325]  # faces
-    # faces_under_pressure_idx = list(range(100, 131))
-    for i in faces_under_pressure_idx:
-        touch_unit_name = f"{TOUCH_UNIT_NAME_PREFIX}{i}"
-        # touch_unit_name = f"Face{i}"
-        try:
-            force_constraint = ObjectsFem.makeConstraintForce(doc, f"Force_{touch_unit_name}")
-            force_constraint.References = [(cmp_obj, touch_unit_name)]
-            # Вычисляем направление силы
-            direction_vector = calculate_direction(i)
-            # Для задания направления создаем вспомогательное ребро
-            direction_edge = Part.makeLine(FreeCAD.Vector(0, 0, 0), direction_vector)
-            direction_obj = doc.addObject("Part::Feature", f"Direction_{touch_unit_name}")
-            direction_obj.Shape = direction_edge
-            force_constraint.Direction = (direction_obj, ["Edge1"])
-            
-            # Величина силы пропорциональна (i - 99)
-            force_constraint.Force = base_force * (1 + (i / 10000))
-            analysis_object.addObject(force_constraint)
-        except Exception as e:
-            print(f"Ошибка при создании силового ограничения для {touch_unit_name}: {e}")
+        faces_under_pressure_idx = FACES_UNDER_PRESSURE
+        # faces_under_pressure_idx = [443, 421, 325]  # faces
+        # faces_under_pressure_idx = list(range(100, 131))
+        for i in faces_under_pressure_idx:
+            touch_unit_name = f"{TOUCH_UNIT_NAME_PREFIX}{i}"
+            # touch_unit_name = f"Face{i}"
+            try:
+                force_constraint = ObjectsFem.makeConstraintForce(doc, f"Force_{touch_unit_name}")
+                force_constraint.References = [(cmp_obj, touch_unit_name)]
+                # Вычисляем направление силы
+                direction_vector = calculate_direction(i)
+                # Для задания направления создаем вспомогательное ребро
+                direction_edge = Part.makeLine(FreeCAD.Vector(0, 0, 0), direction_vector)
+                direction_obj = doc.addObject("Part::Feature", f"Direction_{touch_unit_name}")
+                direction_obj.Shape = direction_edge
+                force_constraint.Direction = (direction_obj, ["Edge1"])
+                
+                # Величина силы пропорциональна (i - 99)
+                force_constraint.Force = base_force * (1 + (i / 10000))
+                analysis_object.addObject(force_constraint)
+            except Exception as e:
+                print(f"Ошибка при создании силового ограничения для {touch_unit_name}: {e}")
 
+    else:
+        # 12. Применяем внешние силы к горизонтальным граням блоков в +/-5% от центра
+        # 1) вычисляем центроид блоков (если не было ранее)
+        centers = [(solid, solid.Shape.CenterOfMass) for solid in solids_list]
+        if not centers:
+            print("No solids for force application")
+        else:
+            avg_x = sum(c[1].x for c in centers) / len(centers)
+            avg_y = sum(c[1].y for c in centers) / len(centers)
+            avg_z = sum(c[1].z for c in centers) / len(centers)
+
+            max_dx = max(abs(c[1].x - avg_x) for c in centers)
+            max_dy = max(abs(c[1].y - avg_y) for c in centers)
+            max_dz = max(abs(c[1].z - avg_z) for c in centers)
+
+            # коэффициент 20%
+            apply_tolerance = APPLY_TOLERANCE
+            lim_dx = max_dx * apply_tolerance
+            lim_dy = max_dy * apply_tolerance
+
+            print(f"Force region limits: dx<={lim_dx:.3f}, dy<={lim_dy:.3f}")
+
+            # собираем все горизонтальные грани и их Z
+            faces_all = []  # (solid, idx, face_z)
+
+            for solid, com in centers:
+                for idx, face in enumerate(solid.Shape.Faces, start=1):
+                    z = face.CenterOfMass.z
+                    faces_all.append((solid, idx, z))
+            # глобальный максимум Z (верх конструкции)
+            global_max_face_z = max(z for _, _, z in faces_all)
+            print(f"Global top face Z = {global_max_face_z:.6f}")
+
+            # 2) Проверка: грань горизонтальная И выше центра блока (верхняя грань)
+            def is_top_horizontal_face(face, solid_com, tol_angle=0.01, tol_z=1e-4):
+                # нормаль грани
+                normal = face.normalAt(0.5, 0.5)
+
+                # 1) горизонтальность: нормаль почти по ±Z
+                if abs(abs(normal.z) - 1.0) >= tol_angle:
+                    return False
+
+                # 2) грань выше центра блока
+                face_com = face.CenterOfMass
+                if face_com.z <= solid_com.z + tol_z or face_com.z < global_max_face_z - tol_z: #!<---------------- avg_z*1.1 is a hack to avoid the case when the face is very close to the center of the block
+                    return False
+
+                return True
+
+
+            # 3) собираем список граней, к которым надо приложить силы
+            horizontal_faces = []  # (solid, face_index)
+
+            for solid, com in centers:
+                dx = abs(com.x - avg_x)
+                dy = abs(com.y - avg_y)
+
+                # проверка попадания центра блока в 5% площадь
+                if dx <= lim_dx and dy <= lim_dy:
+                    for idx, face in enumerate(solid.Shape.Faces, start=1):
+                        if is_top_horizontal_face(face, com):
+                            horizontal_faces.append((solid, idx))
+                            print(f"Candidate top-horizontal face for force: {solid.Name}-Face{idx}")
+
+            if not horizontal_faces:
+                print("No top-horizontal faces found in central region")
+            else:
+                # 4) равномерное давление: сначала считаем суммарную площадь
+                total_area = 0.0
+                for solid, idx in horizontal_faces:
+                    face = solid.Shape.Faces[idx - 1]
+                    total_area += face.Area
+
+                if total_area <= 0:
+                    raise RuntimeError("Total area for pressure application is zero")
+
+                # давление = сила / площадь
+                pressure_value = force / total_area  # [N / mm^2] если модель в мм
+                print(f"Total area = {total_area:.6f}, pressure = {pressure_value:.6e}")
+                for solid, idx in horizontal_faces:
+                    face_name = f"Face{idx}"
+                    cname = f"Pressure_{solid.Name}_F{idx}"
+
+                    try:
+                        pc = ObjectsFem.makeConstraintPressure(doc, cname)
+                        pc.References = [(solid, face_name)]
+
+                        # давление одно и то же для всех граней
+                        pc.Pressure = pressure_value
+
+                        # направление: по нормали грани (по умолчанию)
+                        pc.Reversed = False  # если окажется, что давит "вверх" — поставить True
+
+                        analysis_object.addObject(pc)
+
+                    except Exception as e:
+                        print(f"Error applying pressure to {solid.Name}-Face{idx}: {e}")
 
 
     # 13. Создаем FEM-сетку с использованием Gmsh на компаунде

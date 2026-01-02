@@ -1,0 +1,3 @@
+>>> # Gui.Selection.clearSelection()
+>>> # Gui.Selection.clearSelection()
+>>> # Gui.Selection.addSelection('Steel_bf8_54','PlateCompound','Face1952',-2018.12,-2244.57,56.82)

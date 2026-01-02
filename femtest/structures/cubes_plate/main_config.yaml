@@ -13,6 +13,7 @@ constraints:
   # prefix: "Edge"
   TOUCH_UNIT_NAME_PREFIX: "Vertex"
   border_tolerance: 0.95
+  apply_tolerance: 0.15
 
 contacts:
   activate_friction: false
