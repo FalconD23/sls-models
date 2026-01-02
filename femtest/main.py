@@ -336,7 +336,7 @@ for curr_i, force in enumerate(pressures_N_force, start=1):
 
                 # 2) грань выше центра блока
                 face_com = face.CenterOfMass
-                if face_com.z <= solid_com.z + tol_z or face_com.z < global_max_face_z - tol_z: #!<---------------- avg_z*1.1 is a hack to avoid the case when the face is very close to the center of the block
+                if (face_com.z <= solid_com.z + tol_z) or (face_com.z < global_max_face_z - tol_z): #!<---------------- avg_z*1.1 is a hack to avoid the case when the face is very close to the center of the block
                     return False
 
                 return True
