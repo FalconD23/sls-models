@@ -3,3 +3,4 @@ tests/
 *.pyc
 REFACTORING_COMPARISON.md
 femtest/sandbox/
+femtest/notebooks/
