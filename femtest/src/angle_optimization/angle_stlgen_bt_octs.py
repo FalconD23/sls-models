@@ -94,9 +94,9 @@ def generate_stl_for_angle(angle_degrees=37, output_dir=None):
         return
     
     # Формируем имя файла
-    stl_filename = f"layer_gen_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}_alpha{alpha_deg}.stl"
+    stl_filename = f"RUN_layer_BTOCTS_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}_alpha{alpha_deg}.stl"
     output_file = Path(__file__).parent / stl_filename
-    solid_name = f"layer_gen_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}_alpha{alpha_deg}"
+    solid_name = f"RUN_layer_BTOCTS_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}_alpha{alpha_deg}"
     
     original_cwd = os.getcwd()
     os.chdir(output_dir)
@@ -127,8 +127,8 @@ def main():
     """
     # Generate STL for angle 0 degrees as example
     stl_path = generate_stl_for_angle(
-        angle_degrees=0,
-        filename_prefix="run_angle_bev_hex_prisms"
+        angle_degrees=37,
+        output_dir=str(script_dir)
     )
     print(f"STL file generated: {stl_path}")
 
