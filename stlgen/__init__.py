@@ -31,7 +31,8 @@ from .geometry import (
     CoordinateSystem,
     BeveledPrism,
     PrismLayer,
-    ConvexHullSolver
+    ConvexHullSolver,
+    ConvexPolyhedron
 )
 from .transforms import CylindricalTransform
 from .export import STLExporter
@@ -47,6 +48,7 @@ __all__ = [
     "BeveledPrism",
     "PrismLayer",
     "ConvexHullSolver",
+    "ConvexPolyhedron",
     
     # Transform classes
     "CylindricalTransform",
