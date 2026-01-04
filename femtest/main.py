@@ -52,7 +52,7 @@ FRICTION_COEFF = cfg["contacts"]["friction_coeff"]
 SLOPE_COEFF = cfg["contacts"]["slope_coeff"]
 
 doc_prefix = cfg["doc_prefix"]
-pressures_N_force = [i*1e7*1e0 / (10) for i in range(1, 2)]  # потому что прилагаются 3 силы к 3 вершинам
+pressures_N_force = [i*1e7*1e0 / (10) for i in range(10, 11)]  # потому что прилагаются 3 силы к 3 вершинам
 results = []
 
 # doc = App.newDocument("Imported_3D_Model_FEM")

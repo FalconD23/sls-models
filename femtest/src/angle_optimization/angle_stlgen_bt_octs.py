@@ -43,7 +43,7 @@ from bt_octs_utils import LayerGen
 
 
 
-def generate_stl_for_angle(angle_degrees=37, output_dir=None):
+def generate_stl_for_angle(angle_degrees=37, output_dir=None, filename_prefix="RUN_layer_BTOCTS"):
     # Параметры слоя
     nx, ny, nz = 10, 10, 1
     scale = 1300/160
@@ -93,30 +93,36 @@ def generate_stl_for_angle(angle_degrees=37, output_dir=None):
         print("⚠️ Нет граней для экспорта")
         return
     
-    # Формируем имя файла
-    stl_filename = f"RUN_layer_BTOCTS_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}_alpha{alpha_deg}.stl"
-    output_file = Path(__file__).parent / stl_filename
-    solid_name = f"RUN_layer_BTOCTS_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}_alpha{alpha_deg}"
+    # Устанавливаем output_dir по умолчанию, если не указан
+    if output_dir is None:
+        output_dir = str(script_dir)
+    else:
+        output_dir = str(output_dir)  # Преобразуем в строку, если это Path
     
-    original_cwd = os.getcwd()
-    os.chdir(output_dir)
-    try:
-        # Экспортируем
-        exporter.write_stl(
-            blocks=all_blocks,
-            filename=str(output_file),
-            solid_name=solid_name,
-            format="ascii"
-        )
-        print(f"✓ STL файл создан: {stl_filename}")
-        print(f"✓ Размер файла: {output_file.stat().st_size} байт")
+    # Формируем имя файла с использованием filename_prefix
+    stl_filename = f"{filename_prefix}_alpha{alpha_deg}_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}.stl"
+    # Формируем полный путь к файлу в output_dir
+    output_file = Path(output_dir) / stl_filename
+    solid_name = f"{filename_prefix}_alpha{alpha_deg}_{nx}x{ny}x{nz}_a{a}_b{b}_c{c}"
+    
+    # Создаем директорию, если её нет
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Экспортируем (не нужно менять рабочую директорию, используем абсолютный путь)
+    exporter.write_stl(
+        blocks=all_blocks,
+        filename=str(output_file),
+        solid_name=solid_name,
+        format="ascii"
+    )
+    print(f"✓ STL файл создан: {stl_filename}")
+    print(f"✓ Полный путь: {output_file}")
+    print(f"✓ Размер файла: {output_file.stat().st_size} байт")
 
-        stl_path = os.path.join(output_dir, stl_filename)
-        print(f"Generated STL for angle {angle_degrees:.1f}°: {stl_path}")
-        
-        return stl_path
-    finally:
-        os.chdir(original_cwd)
+    stl_path = str(output_file)
+    print(f"Generated STL for angle {angle_degrees:.1f}°: {stl_path}")
+    
+    return stl_path
 
 
 def main():
