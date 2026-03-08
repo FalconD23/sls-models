@@ -18,13 +18,18 @@ def gen_list_from_txt(path, prefix='Face'):
 
 # relative path doesn't work with freecad-python-cls running
 # tetrahedrons_plate, cubes_plate, bev_hex_prisms_plate, bev_trunc_octahedrons
-config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_trunc_octahedrons/main_config.yaml")
+
+# config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_trunc_octahedrons/main_config.yaml")
+_SCRIPT_DIR = Path(__file__).resolve().parent
+config_path = _SCRIPT_DIR / "structures" / "bev_trunc_octahedrons" / "main_config.yaml"
 with open(config_path, "r") as f:
     cfg = yaml.safe_load(f)
 
 
 
-ROOT_DIR = cfg["root_dir"]
+# If root_dir is __AUTO__ (portable mode), compute it relative to this script
+_AUTO_ROOT = str(_SCRIPT_DIR / "structures" / "bev_trunc_octahedrons")
+ROOT_DIR = _AUTO_ROOT if cfg.get("root_dir") == "__AUTO__" else cfg["root_dir"]
 def with_root(path):
     return f"{ROOT_DIR}/{path}"
 
@@ -359,6 +364,7 @@ for curr_i, force in enumerate(pressures_N_force, start=1):
             if not horizontal_faces:
                 print("No top-horizontal faces found in central region")
             else:
+                horizontal_faces = [horizontal_faces[0]]
                 # 4) равномерное давление: сначала считаем суммарную площадь
                 total_area = 0.0
                 for solid, idx in horizontal_faces:

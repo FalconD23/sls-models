@@ -1,16 +1,14 @@
 
+# from CAD_testing.cad_analysis.planes_cmp.tetrahedrons_sls.fem_eval_plus_Hydra import STL_FILENAME
 import FreeCAD, Part, ObjectsFem
 from femtools import ccxtools
 import re
-import sys
-from pathlib import Path
-
-# Import STL generation function
-sys.path.insert(0, str(Path(__file__).parent / "src" / "angle_optimization"))
-from angle_stlgen_bt_octs import generate_stl_for_angle
 
 # Hydra
 import yaml
+from pathlib import Path
+                                                            
+
 
 def gen_list_from_txt(path, prefix='Face'):
     text = ''
@@ -20,11 +18,9 @@ def gen_list_from_txt(path, prefix='Face'):
     return list(map(int, face_numbers))
 
 # Path resolved relative to this script file — works locally and inside Docker container
-# bev_hex_prisms_plate, bev_trunc_octahedrons
+# tetrahedrons_plate, cubes_plate, bev_hex_prisms_plate, bev_trunc_octahedrons
 _SCRIPT_DIR = Path(__file__).resolve().parent
-# config_path = _SCRIPT_DIR / "structures" / "bev_hex_prisms_plate" / "main_config.yaml"
 config_path = _SCRIPT_DIR / "structures" / "bev_trunc_octahedrons" / "main_config.yaml"
-
 with open(config_path, "r") as f:
     cfg = yaml.safe_load(f)
 
@@ -36,50 +32,39 @@ ROOT_DIR = _AUTO_ROOT if cfg.get("root_dir") == "__AUTO__" else cfg["root_dir"]
 def with_root(path):
     return f"{ROOT_DIR}/{path}"
 
-STL_FILENAME = with_root(cfg["stl_filename"])
-FACES_NUM = cfg["faces_num"]    
-# GUI = cfg["gui"]
-GUI = False
-TOLERANCE = cfg["tolerance"]
+for angle in range(37, 38, 1):
+# for angle in [23]:
+    STL_FILENAME = with_root(cfg["stl_filename"])
+    # STL_FILENAME = with_root(f'RUN_layer_BTOCTS_alpha{angle}_10x10x1_a65.0_b65.0_c48.75.stl')
+    # STL_FILENAME = with_root(f'EXTRA_RUN_layer_BTOCTS_alpha{angle}_20x20x1_a65.0_b65.0_c48.75.stl')
+    FACES_NUM = cfg["faces_num"]    
+    GUI = cfg["gui"]
+    TOLERANCE = cfg["tolerance"]
 
-UNDER_PRESSURE_FILENAME = with_root(cfg["constraints"]["under_pressure_file"])
-LIST_MODE = False
-CONSTRAINT_FIXED_FILENAME = with_root(cfg["constraints"]["fixed_faces_file"])
-CONSTRAINT_FIXED_FACES = gen_list_from_txt(CONSTRAINT_FIXED_FILENAME)
+    UNDER_PRESSURE_FILENAME = with_root(cfg["constraints"]["under_pressure_file"])
+    LIST_MODE = False
 
-TOUCH_UNIT_NAME_PREFIX = cfg["constraints"]["TOUCH_UNIT_NAME_PREFIX"]
-BORDER_TOLERANCE = cfg["constraints"]["border_tolerance"]
-FACES_UNDER_PRESSURE = gen_list_from_txt(path=UNDER_PRESSURE_FILENAME, 
-                                         prefix=TOUCH_UNIT_NAME_PREFIX)
-APPLY_TOLERANCE = cfg["constraints"]["apply_tolerance"]
+    CONSTRAINT_FIXED_FILENAME = with_root(cfg["constraints"]["fixed_faces_file"])
+    CONSTRAINT_FIXED_FACES = gen_list_from_txt(CONSTRAINT_FIXED_FILENAME)
 
-FRICTION_ACTIVATE = cfg["contacts"]["activate_friction"]
-CC_FILENAME = with_root(cfg["contacts"]["cc_pairs_file"])
-CENTERS_DIST_FOR_CONTACT = cfg["contacts"]["centers_dist_for_contact"]
-FRICTION_COEFF = cfg["contacts"]["friction_coeff"]
-SLOPE_COEFF = cfg["contacts"]["slope_coeff"]
+    TOUCH_UNIT_NAME_PREFIX = cfg["constraints"]["TOUCH_UNIT_NAME_PREFIX"]
+    BORDER_TOLERANCE = cfg["constraints"]["border_tolerance"]
+    FACES_UNDER_PRESSURE = gen_list_from_txt(path=UNDER_PRESSURE_FILENAME, 
+                                            prefix=TOUCH_UNIT_NAME_PREFIX)
+    APPLY_TOLERANCE = cfg["constraints"]["apply_tolerance"]
 
-doc_prefix = cfg["doc_prefix"]
-# pressures_N_force = [i*1e7*1e0 / (10) for i in range(1, 3)]  # потому что прилагаются 3 силы к 3 вершинам
-pressures_N_force = [i*1e7*1e0 / (10) for i in range(10,11)]
-# angles = list(range(20.5, 30.5, 0.5))
-angles = [angle for angle in range(35, 37, 1)]
-# lt, rt, step = 5, 15, 1 
-# angles = [lt + i*step for i in range(int((rt - lt) / step))]
-# angles = [6.5, 7, 7.5]
-results = []
-debug_lines = []
+    FRICTION_ACTIVATE = cfg["contacts"]["activate_friction"]
+    CC_FILENAME = with_root(cfg["contacts"]["cc_pairs_file"])
+    CENTERS_DIST_FOR_CONTACT = cfg["contacts"]["centers_dist_for_contact"]
+    FRICTION_COEFF = cfg["contacts"]["friction_coeff"]
+    SLOPE_COEFF = cfg["contacts"]["slope_coeff"]
 
-# doc = App.newDocument("Imported_3D_Model_FEM")
+    doc_prefix = cfg["doc_prefix"] + f'_angle{angle}_'
+    pressures_N_force = [i*1e7*1e0 / (10) for i in range(10, 11)]  # потому что прилагаются 3 силы к 3 вершинам
+    results = []
 
-for angle in angles:
-    # Generate STL file for current angle
-    print(f'\n=== Generating STL for angle {angle}° ===\n')
-    stl_file_path = generate_stl_for_angle(
-        angle_degrees=angle,
-        output_dir=str(Path(STL_FILENAME).parent),  # Use directory from config
-    )
-    
+    # doc = App.newDocument("Imported_3D_Model_FEM")
+
     for curr_i, force in enumerate(pressures_N_force, start=1):
         # 1. Создаем новый документ
         # doc = App.newDocument("Imported_3D_Model_FEM")
@@ -89,6 +74,7 @@ for angle in angles:
 
         # 2. Импортируем STL модель как Mesh
         import Mesh
+        stl_file_path = STL_FILENAME
 
         mesh_obj = Mesh.Mesh(stl_file_path)
         print("STL файл импортирован как Mesh объект")
@@ -150,10 +136,10 @@ for angle in angles:
 
         # 8. Создаем решатель CalculiX для FEM анализа
         solver_object = ObjectsFem.makeSolverCalculixCcxTools(doc, "CalculiX")
-        solver_object.GeometricalNonlinearity = 'nonlinear' # 'linear'
+        solver_object.GeometricalNonlinearity = 'nonlinear' #'linear'
         solver_object.ThermoMechSteadyState = True
         solver_object.MatrixSolverType = 'default'
-        solver_object.IterationsControlParameterTimeUse = True # False
+        solver_object.IterationsControlParameterTimeUse = True #False
         analysis_object.addObject(solver_object)
 
         # 9. Определяем материал (сталь) для анализа
@@ -230,13 +216,6 @@ for angle in angles:
             analysis_object.addObject(fixed_constraint)
 
             print(f"Total fixed faces: {len(faces_to_fix)}")
-        
-        #todo ===== DIAGNOSTICS: fixed blocks =====
-        fixed_blocks = set()
-        for solid, _ in faces_to_fix:
-            fixed_blocks.add(solid.Name)
-        n_fixed_blocks = len(fixed_blocks)
-
 
 
         #? 11. Автоматическое задание контактных ограничений с трением между соседними блоками
@@ -316,7 +295,7 @@ for angle in angles:
                     force_constraint.Direction = (direction_obj, ["Edge1"])
                     
                     # Величина силы пропорциональна (i - 99)
-                    force_constraint.Force = base_force * (1 + (i * 0))
+                    force_constraint.Force = base_force * (1 + 0)
                     analysis_object.addObject(force_constraint)
                 except Exception as e:
                     print(f"Ошибка при создании силового ограничения для {touch_unit_name}: {e}")
@@ -388,7 +367,6 @@ for angle in angles:
                 if not horizontal_faces:
                     print("No top-horizontal faces found in central region")
                 else:
-                    # horizontal_faces = [horizontal_faces[0]]
                     # 4) равномерное давление: сначала считаем суммарную площадь
                     total_area = 0.0
                     for solid, idx in horizontal_faces:
@@ -398,7 +376,7 @@ for angle in angles:
                     if total_area <= 0:
                         raise RuntimeError("Total area for pressure application is zero")
 
-                    # давление = сила / площад
+                    # давление = сила / площадь
                     pressure_value = force / total_area  # [N / mm^2] если модель в мм
                     print(f"Total area = {total_area:.6f}, pressure = {pressure_value:.6e}")
                     for solid, idx in horizontal_faces:
@@ -411,6 +389,7 @@ for angle in angles:
 
                             # давление одно и то же для всех граней
                             pc.Pressure = pressure_value
+                            pc.Scale = 1
 
                             # направление: по нормали грани (по умолчанию)
                             pc.Reversed = False  # если окажется, что давит "вверх" — поставить True
@@ -419,9 +398,6 @@ for angle in angles:
 
                         except Exception as e:
                             print(f"Error applying pressure to {solid.Name}-Face{idx}: {e}")
-        n_loaded_faces = len(horizontal_faces)
-        loaded_area = total_area
-
 
 
         # 13. Создаем FEM-сетку с использованием Gmsh на компаунде
@@ -437,11 +413,6 @@ for angle in angles:
         # for i, solid in enumerate(cmp_obj.Shape.Solids):
         #     print(f"[DEBUG]: Твердое тело {i+1}: {len(solid.Faces)} граней, объем = {solid.Volume:.6f}")
 
-        
-        # doc.recompute()
-        femmesh_obj.CharacteristicLengthMax = 2.0
-        femmesh_obj.CharacteristicLengthMin = 2.0
-        
         error = gmsh_mesh.create_mesh()
         if error:
             print("Ошибка создания сетки: ", error)
@@ -452,9 +423,6 @@ for angle in angles:
 
         analysis_object.addObject(femmesh_obj)  # [addObject: https://wiki.freecad.org/FEM_Workbench]
         doc.recompute()
-
-        n_nodes = len(femmesh_obj.FemMesh.Nodes)
-        n_elems = len(femmesh_obj.FemMesh.Volumes)
 
 
 
@@ -480,33 +448,13 @@ for angle in angles:
         #     femmesh_obj.ViewObject.applyDisplacement(20)
             # print("В GUI отображена деформированная форма x20")
 
-        results.append((angle, force, max_dz))
+        results.append((force, max_dz))
         # уничтожаем документ перед следующим циклом
         if not GUI:
             FreeCAD.closeDocument(doc.Name)
 
-        debug_lines.append(
-            f"[DIAG] angle={angle:5.1f} deg | "+
-            f"fixed_blocks={n_fixed_blocks:3d} | "+
-            f"loaded_faces={n_loaded_faces:3d} | "+
-            f"loaded_area={loaded_area:10.4f} | "+
-            f"mesh_nodes={n_nodes:7d} | "+
-            f"mesh_elems={n_elems:7d}"
-        )
-
-
-
-press_list = [p for _, p, _ in results]
-angles_list = [a for a, _, _ in results]
-dz_list    = [d for _, _, d in results]
-print(f'\n=== Results ===\n')
-print("Pressures (N):", press_list)
-print("Angles (°):", angles_list)
-print("Max dz (mm):", dz_list)
-
-print("\n" + "="*60)
-print("DIAGNOSTICS:")
-print("="*60)
-for line in debug_lines:
-    print(line)
-print("="*60)
+    # Печатаем два списка: давлений и соответствующих max_dz
+    press_list = [p for p, _ in results]
+    dz_list    = [d for _, d in results]
+    print("Pressures (N):", press_list)
+    print("Max dz (mm):", dz_list)

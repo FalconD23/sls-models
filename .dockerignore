@@ -1,0 +1,52 @@
+# Python кэш
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+
+# Виртуальные окружения
+my_env_freecad/
+venv/
+.venv/
+env/
+
+# Sandbox и временные файлы
+femtest/sandbox/
+
+# Jupyter артефакты
+**/.ipynb_checkpoints/
+
+# Git
+.git/
+.gitignore
+
+# STL файлы (большие, уже есть в volumes)
+# Раскомментируй если хочешь уменьшить размер образа:
+# **/*.stl
+
+# Результаты FEM (генерируются в runtime)
+fem_results/
+/tmp/
+
+# IDE
+.cursor/
+.vscode/
+*.code-workspace
+
+# Логи
+*.log
+
+# Docker (не нужно копировать внутрь контейнера)
+Dockerfile
+docker-compose.yml
+docker/
+.dockerignore
+DOCKER_GUIDE.md
+
+
+
+
+
+
+

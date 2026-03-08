@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  freecad-sls:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sls-freecad:latest
+    container_name: sls_freecad_gui
+
+    ports:
+      - "6080:6080"   # noVNC — доступ через браузер
+      - "5900:5900"   # VNC — прямое подключение VNC-клиентом
+
+    volumes:
+      # Проект монтируется как volume — изменения файлов сразу видны в контейнере
+      - .:/workspace:rw
+      # Результаты FEM расчётов сохраняются на хосте
+      - ./fem_results:/tmp/fem_results:rw
+
+    environment:
+      - DISPLAY=:1
+      - VNC_PORT=5900
+      - NOVNC_PORT=6080
+      - VNC_RESOLUTION=1920x1080
+      - VNC_COL_DEPTH=24
+
+    # Раскомментируй и настрой для облачного инстанса:
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '8'
+    #       memory: 16G
+
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+
+
+
+
+
+
