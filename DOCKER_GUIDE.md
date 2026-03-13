@@ -1,6 +1,6 @@
 # Docker Guide — SLS-Models FreeCAD
 
-Контейнер упаковывает FreeCAD + CalculiX + Python окружение.
+Контейнер упаковывает FreeCAD + CalculiX + Python 3.11 окружение.
 GUI доступен в браузере через **noVNC** — работает локально и в облаке без установки VNC-клиента.
 
 ## Структура файлов
@@ -131,16 +131,20 @@ docker exec -it sls_freecad_gui \
 docker exec -it sls_freecad_gui \
     ccx --help
 
-# 4. Проверить Python-окружение и ключевые пакеты
+# 4. Проверить Gmsh (нужен для makeMeshGmsh)
+docker exec -it sls_freecad_gui \
+    gmsh --version
+
+# 5. Проверить Python-окружение и ключевые пакеты
 docker exec -it sls_freecad_gui \
     /home/sls_user/my_env_freecad/bin/python3 -c \
     "import numpy, scipy, yaml, femtools; print('OK — numpy scipy yaml femtools все импортированы')"
 
-# 5. Проверить пути (должен распечатать config_path без ошибок)
+# 6. Проверить пути (должен распечатать config_path без ошибок)
 docker exec -it sls_freecad_gui bash -c \
     "cd /workspace && freecad -c femtest/main.py --check-paths 2>&1 | head -20"
 
-# 6. Посмотреть логи VNC/noVNC
+# 7. Посмотреть логи VNC/noVNC
 docker exec -it sls_freecad_gui cat /tmp/x11vnc.log
 docker exec -it sls_freecad_gui cat /tmp/novnc.log
 ```

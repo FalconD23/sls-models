@@ -13,6 +13,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VNC_RESOLUTION=1920x1080 \
     VNC_COL_DEPTH=24
 
+# Use local source archive to avoid network issues with gmsh.info during builds.
+COPY vendor/gmsh-4.11.1-source.tgz /tmp/gmsh-4.11.1-source.tgz
+
 RUN apt-get update && apt-get install -y \
     # Locale
     locales \
@@ -31,11 +34,39 @@ RUN apt-get update && apt-get install -y \
     novnc websockify \
     # Fonts
     fonts-liberation fonts-dejavu \
-    # CalculiX FEM solver
+    # FEM tools
     calculix-ccx \
+    # Runtime libs required by built gmsh binary
+    libfltk1.3 libfltk-images1.3 \
+    # Build tools для сборки gmsh
+    build-essential cmake libfltk1.3-dev \
+    && add-apt-repository ppa:deadsnakes/ppa \
     && add-apt-repository ppa:freecad-maintainers/freecad-stable \
     && apt-get update \
-    && apt-get install -y freecad \
+    && apt-get install -y freecad python3.11 python3.11-venv \
+    # OpenCASCADE headers/libraries so gmsh can import BREP/STEP/IGES
+    && apt-get install -y \
+       libocct-foundation-dev \
+       libocct-modeling-data-dev \
+       libocct-modeling-algorithms-dev \
+       libocct-data-exchange-dev \
+       libocct-ocaf-dev \
+       libocct-visualization-dev \
+    && cd /tmp \
+    && tar -xzf /tmp/gmsh-4.11.1-source.tgz \
+    && cd gmsh-4.11.1-source \
+    && mkdir build && cd build \
+    && cmake -DENABLE_OCC=ON .. \
+    && make -j4 \
+    && make install \
+    && cd / && rm -rf /tmp/gmsh-* \
+    && apt-get remove -y build-essential cmake libfltk1.3-dev \
+       libocct-foundation-dev \
+       libocct-modeling-data-dev \
+       libocct-modeling-algorithms-dev \
+       libocct-data-exchange-dev \
+       libocct-ocaf-dev \
+       libocct-visualization-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,13 +74,14 @@ RUN apt-get update && apt-get install -y \
 # 2. Пользователь (не root)
 # ──────────────────────────────────────────────
 RUN useradd -ms /bin/bash sls_user
+RUN echo "sls_user:freecad1234" | chpasswd
 USER sls_user
 WORKDIR /home/sls_user
 
 # ──────────────────────────────────────────────
-# 3. Python виртуальное окружение
+# 3. Python 3.11 виртуальное окружение
 # ──────────────────────────────────────────────
-RUN python3 -m venv /home/sls_user/my_env_freecad
+RUN python3.11 -m venv /home/sls_user/my_env_freecad
 ENV PATH="/home/sls_user/my_env_freecad/bin:$PATH"
 
 # ──────────────────────────────────────────────

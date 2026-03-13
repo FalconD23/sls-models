@@ -40,7 +40,7 @@ fem_results/
 # Docker (не нужно копировать внутрь контейнера)
 Dockerfile
 docker-compose.yml
-docker/
+# docker/
 .dockerignore
 DOCKER_GUIDE.md
 
