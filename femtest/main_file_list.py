@@ -3,6 +3,7 @@
 import FreeCAD, Part, ObjectsFem
 from femtools import ccxtools
 import re
+import subprocess
 
 # Hydra
 import yaml
@@ -21,6 +22,7 @@ def gen_list_from_txt(path, prefix='Face'):
 # tetrahedrons_plate, cubes_plate, bev_hex_prisms_plate, bev_trunc_octahedrons
 _SCRIPT_DIR = Path(__file__).resolve().parent
 config_path = _SCRIPT_DIR / "structures" / "bev_trunc_octahedrons" / "main_config.yaml"
+# config_path = "/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_trunc_octahedrons/main_config.yaml"
 with open(config_path, "r") as f:
     cfg = yaml.safe_load(f)
 
@@ -413,13 +415,69 @@ for angle in range(37, 38, 1):
         # for i, solid in enumerate(cmp_obj.Shape.Solids):
         #     print(f"[DEBUG]: Твердое тело {i+1}: {len(solid.Faces)} граней, объем = {solid.Volume:.6f}")
 
-        error = gmsh_mesh.create_mesh()
+        try:
+            error = gmsh_mesh.create_mesh()
+        except Exception as exc:
+            msg = str(exc)
+            print(f"Gmsh raised exception: {msg}")
+
+            # Try to extract /tmp/fcfem_* directory from exception and provide
+            # extra diagnostics to understand why .unv was not created.
+            m = re.search(r"(/tmp/fcfem_[^/\s]+)", msg)
+            if m:
+                tmp_dir = Path(m.group(1))
+                geo_file = tmp_dir / "shape2mesh.geo"
+                unv_file = tmp_dir / "PlateCompound_Mesh.unv"
+                print(f"Gmsh temp dir: {tmp_dir}")
+                if tmp_dir.exists():
+                    print("Temp dir files:")
+                    for p in sorted(tmp_dir.iterdir()):
+                        print(f"  - {p.name}")
+                else:
+                    print("Temp dir does not exist.")
+
+                if geo_file.exists():
+                    print("Running manual gmsh diagnostics...")
+                    cmd = [
+                        "gmsh",
+                        str(geo_file),
+                        "-3",
+                        "-format", "unv",
+                        "-o", str(unv_file),
+                        "-v", "4",
+                    ]
+                    res = subprocess.run(cmd, capture_output=True, text=True)
+                    print(f"gmsh exit code: {res.returncode}")
+                    if res.stdout:
+                        print("gmsh stdout tail:")
+                        print("\n".join(res.stdout.splitlines()[-20:]))
+                    if res.stderr:
+                        print("gmsh stderr tail:")
+                        print("\n".join(res.stderr.splitlines()[-20:]))
+
+            raise RuntimeError(f"Gmsh mesh creation crashed: {msg}") from exc
+
         if error:
-            print("Ошибка создания сетки: ", error)
-        else:
-            print("Сетка успешно создана")
-            print(f"Количество узлов: {len(femmesh_obj.FemMesh.Nodes)}")
-            print(f"Количество элементов: {len(femmesh_obj.FemMesh.Volumes)}")
+            raise RuntimeError(f"Gmsh mesh creation failed: {error}")
+
+        n_nodes = len(femmesh_obj.FemMesh.Nodes)
+        n_volumes = len(femmesh_obj.FemMesh.Volumes)
+        n_faces = len(getattr(femmesh_obj.FemMesh, "Faces", {}))
+        n_edges = len(getattr(femmesh_obj.FemMesh, "Edges", {}))
+
+        # Fail fast with explicit diagnostics instead of failing later in fea.run()
+        if n_volumes == 0 and n_faces == 0 and n_edges == 0:
+            raise RuntimeError(
+                "Gmsh returned empty mesh (0 volumes, 0 faces, 0 edges). "
+                "Check geometry validity, meshing parameters and gmsh output files in /tmp/fcfem_*."
+            )
+
+        print("Сетка успешно создана")
+        print(f"Количество узлов: {n_nodes}")
+        print(
+            "Элементы сетки: "
+            f"volumes={n_volumes}, faces={n_faces}, edges={n_edges}"
+        )
 
         analysis_object.addObject(femmesh_obj)  # [addObject: https://wiki.freecad.org/FEM_Workbench]
         doc.recompute()

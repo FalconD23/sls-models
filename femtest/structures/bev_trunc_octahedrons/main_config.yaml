@@ -7,7 +7,7 @@ stl_filename: "RUN_layer_BTOCTS_10x10x1_a65.0_b65.0_c48.75_alpha35.stl"
 doc_prefix: "Steel_bev_trunc_octahedrons_"
 
 faces_num: 44
-gui: True
+gui: False
 tolerance: 0.1
 
 constraints:

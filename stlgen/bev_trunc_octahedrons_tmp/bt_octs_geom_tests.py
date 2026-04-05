@@ -125,15 +125,16 @@ def test_set_bt_octs():
     print("Тест: Набор усечённых октаэдров")
     print("=" * 60)
     
+    ANGLE = 15
     # Список конфигураций: (center, a, b, c, alpha_deg)
     block_configs = [
-        (np.array([0, 0, 0]), 8.0, 8.0, 6.0, 35.0),
-        (np.array([16, 0, 0]), 8.0, 8.0, 6.0, 35.0),
-        # (np.array([0, 16, 0]), 8.0, 8.0, 6.0, 35.0),
+        (np.array([0, 0, 0]), 8.0, 8.0, 6.0, ANGLE),
+            # (np.array([16, 0, 0]), 8.0, 8.0, 6.0, ANGLE),
+        (np.array([0, 16, 0]), 8.0, 8.0, 6.0, ANGLE),
         
-        (np.array([8, 8, 6]), 8.0, 8.0, 6.0, 35.0),
-        (np.array([0, 0, -12]), 8.0, 8.0, 6.0, 35.0),
-        (np.array([0, 0, 12]), 8.0, 8.0, 6.0, 35.0),
+        (np.array([8, 8, 6]), 8.0, 8.0, 6.0, ANGLE),
+        # (np.array([0, 0, -12]), 8.0, 8.0, 6.0, ANGLE),
+        (np.array([0, 0, 12]), 8.0, 8.0, 6.0, ANGLE),
     ]
     inverse_list = [1]
     
@@ -482,8 +483,8 @@ def test_layer_gen(is_vizualized=False):
 
 def main():
     # test_truncated_octahedron()
-    # test_set_bt_octs()  # Раскомментируйте для запуска набора блоков
-    test_layer_gen(is_vizualized=True)  # Раскомментируйте для запуска генерации слоя
+    test_set_bt_octs()  # Раскомментируйте для запуска набора блоков
+    # test_layer_gen(is_vizualized=True)  # Раскомментируйте для запуска генерации слоя
 
 
 if __name__ == "__main__":
