@@ -1,4 +1,5 @@
-root_dir: "/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/tetrahedrons_plate"
+# root_dir: "/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/tetrahedrons_plate"
+root_dir: "__AUTO__"
 stl_filename: "tetrah_sls.stl"
 doc_prefix: "Steel_tetrahedrons_"
 

@@ -4,6 +4,7 @@ root_dir: "__AUTO__"
 # stl_filename: "layer_gen_10x10x1_a65.0_b65.0_c48.75_alpha35.0.stl"
 stl_filename: "RUN_layer_BTOCTS_10x10x1_a65.0_b65.0_c48.75_alpha35.stl"
 # stl_filename: "EXTRA_RUN_BT8_alpha37_20x20x1_a65.0_b65.0_c48.75.stl"
+# stl_filename: "2m_RUN_layer_BTOCTS_alpha36_20x20x2_a32.5_b32.5_c24.375.stl"
 doc_prefix: "Steel_bev_trunc_octahedrons_"
 
 faces_num: 44
