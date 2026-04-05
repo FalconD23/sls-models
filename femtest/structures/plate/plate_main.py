@@ -3,11 +3,11 @@ import FreeCAD, Part, ObjectsFem
 from femtools import ccxtools
 
 # Отключаем GUI вообще
-GUI = False
+GUI = True
 
-# Набор давлений (Н), которые хотим перебрать
+# Набо  р давлений (Н), которые хотим перебрать
 patch_area_mm2 = 100*100
-pressures_N = [i * 1e7 / (10 * patch_area_mm2) for i in range(1, 3)]  # 100, 200, …, 1000
+pressures_N = [i * 1e7 / (1 * patch_area_mm2) for i in range(1, 2)]  # 100, 200, …, 1000
 
 results = []  # здесь будут кортежи (P, max_dz)
 

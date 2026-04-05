@@ -1,10 +1,11 @@
-root_dir: "/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_hex_prisms_plate"
-# stl_filename: "bf8_ascii_30.0deg_radius_69.3mm_height_100.0mm.stl"
-stl_filename: "run_angle_bev_hex_prisms_10.0deg.stl"
+# root_dir: "/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_hex_prisms_plate"
+root_dir: "__AUTO__"
+stl_filename: "bf8_ascii_30.0deg_radius_69.3mm_height_100.0mm.stl"
+# stl_filename: "run_angle_bev_hex_prisms.stl"
 doc_prefix: "Steel_bev_hex_prisms_plate_"
 
 faces_num: 20
-gui: False
+gui: True
 tolerance: 0.1
 
 constraints:

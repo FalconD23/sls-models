@@ -1,5 +1,5 @@
 
-import FreeCAD, Part, ObjectsFem
+import FreeCAD, Part, ObjectsFem #7474747
 from femtools import ccxtools
 import re
 
@@ -21,14 +21,21 @@ def gen_list_from_txt(path, prefix='Face'):
 
 # config_path = Path("/home/ubnps23/tecHub/SLS_dev/sls-models/femtest/structures/bev_trunc_octahedrons/main_config.yaml")
 _SCRIPT_DIR = Path(__file__).resolve().parent
-config_path = _SCRIPT_DIR / "structures" / "bev_trunc_octahedrons" / "main_config.yaml"
+# config_path = _SCRIPT_DIR / "structures" / "bev_trunc_octahedrons" / "main_config.yaml"
+# config_path = _SCRIPT_DIR / "structures" / "cubes_plate" / "main_config.yaml"
+config_path = _SCRIPT_DIR / "structures" / "tetrahedrons_plate" / "main_config.yaml"
+# config_path = _SCRIPT_DIR / "structures" / "bev_hex_prisms_plate" / "main_config.yaml"
 with open(config_path, "r") as f:
     cfg = yaml.safe_load(f)
 
 
 
 # If root_dir is __AUTO__ (portable mode), compute it relative to this script
-_AUTO_ROOT = str(_SCRIPT_DIR / "structures" / "bev_trunc_octahedrons")
+# _AUTO_ROOT = str(_SCRIPT_DIR / "structures" / "bev_trunc_octahedrons")
+# _AUTO_ROOT = str(_SCRIPT_DIR / "structures" / "cubes_plate")
+_AUTO_ROOT = str(_SCRIPT_DIR / "structures" / "tetrahedrons_plate")
+# _AUTO_ROOT = str(_SCRIPT_DIR / "structures" / "bev_hex_prisms_plate")
+
 ROOT_DIR = _AUTO_ROOT if cfg.get("root_dir") == "__AUTO__" else cfg["root_dir"]
 def with_root(path):
     return f"{ROOT_DIR}/{path}"
@@ -39,7 +46,7 @@ GUI = cfg["gui"]
 TOLERANCE = cfg["tolerance"]
 
 UNDER_PRESSURE_FILENAME = with_root(cfg["constraints"]["under_pressure_file"])
-LIST_MODE = False
+LIST_MODE = True #!<---------------- False
 
 CONSTRAINT_FIXED_FILENAME = with_root(cfg["constraints"]["fixed_faces_file"])
 CONSTRAINT_FIXED_FACES = gen_list_from_txt(CONSTRAINT_FIXED_FILENAME)

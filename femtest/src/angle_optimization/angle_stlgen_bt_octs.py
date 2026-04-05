@@ -46,11 +46,11 @@ from bt_octs_utils import LayerGen
 def generate_stl_for_angle(
     angle_degrees=37, 
     output_dir=None, 
-    filename_prefix="RUN_layer_BTOCTS"):
+    filename_prefix="2m_RUN_layer_BTOCTS"):
     # Параметры слоя
-    nx, ny, nz = 10, 10, 1
+    nx, ny, nz = 20, 20, 2
     # nx, ny, nz = 20, 20, 1
-    scale = 1300/160
+    scale = 0.5 *1300/160 
     a, b, c = 8.0*scale, 8.0*scale, 6.0*scale
     alpha_deg = angle_degrees
     

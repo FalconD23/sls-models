@@ -4,6 +4,7 @@ import FreeCAD, Part, ObjectsFem
 from femtools import ccxtools
 import re
 import subprocess
+import subprocess
 
 # Hydra
 import yaml
@@ -34,7 +35,7 @@ ROOT_DIR = _AUTO_ROOT if cfg.get("root_dir") == "__AUTO__" else cfg["root_dir"]
 def with_root(path):
     return f"{ROOT_DIR}/{path}"
 
-for angle in range(37, 38, 1):
+for angle in range(36, 37, 1):
 # for angle in [23]:
     STL_FILENAME = with_root(cfg["stl_filename"])
     # STL_FILENAME = with_root(f'RUN_layer_BTOCTS_alpha{angle}_10x10x1_a65.0_b65.0_c48.75.stl')
@@ -458,7 +459,8 @@ for angle in range(37, 38, 1):
             raise RuntimeError(f"Gmsh mesh creation crashed: {msg}") from exc
 
         if error:
-            raise RuntimeError(f"Gmsh mesh creation failed: {error}")
+            #! raise RuntimeError(f"Gmsh mesh creation failed: {error}")
+            print(f"Gmsh mesh creation failed: {error}")
 
         n_nodes = len(femmesh_obj.FemMesh.Nodes)
         n_volumes = len(femmesh_obj.FemMesh.Volumes)
