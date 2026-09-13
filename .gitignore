@@ -3,4 +3,6 @@ tests/
 *.pyc
 REFACTORING_COMPARISON.md
 femtest/sandbox/
-stlgen/out/, stlgen/trunc-tetra-4/out/, stlgen/trunc-tetra-4/out_ood/
+stlgen/out/
+stlgen/trunc-tetra-4/out/
+stlgen/trunc-tetra-4/out_ood/
