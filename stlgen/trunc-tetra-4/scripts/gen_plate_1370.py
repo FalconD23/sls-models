@@ -7,7 +7,8 @@
 STL и PNG по умолчанию пишутся в stlgen/collection.
 
 Запуск:
-    python trunc-tetra-4/scripts/gen_plate_1370.py
+    python trunc-tetra-4/scripts/gen_plate_1370.py                 # STL + PNG
+    python trunc-tetra-4/scripts/gen_plate_1370.py --format step   # STEP
     python trunc-tetra-4/scripts/gen_plate_1370.py --show
     python trunc-tetra-4/scripts/gen_plate_1370.py --nx 6 --ny 6   # ~400 блоков
 """
@@ -71,9 +72,16 @@ def main() -> None:
     p.add_argument("--xy", type=float, default=PLATE_XY, help="габарит пластины по X и Y, мм")
     p.add_argument("--thickness", type=float, default=PLATE_Z, help="толщина пластины, мм")
     p.add_argument(
+        "--format",
+        dest="fmt",
+        choices=("stl", "step"),
+        default="stl",
+        help="формат экспорта (stl по умолчанию)",
+    )
+    p.add_argument(
         "--stl",
         default=None,
-        help="путь к STL (по умолчанию stlgen/collection/plate_<габарит>.stl)",
+        help="путь к файлу (по умолчанию stlgen/collection/plate_<габарит>.<fmt>)",
     )
     p.add_argument("--show", action="store_true", help="показать окно matplotlib")
     a = p.parse_args()
@@ -85,7 +93,9 @@ def main() -> None:
 
     out_dir = _STLGEN / "collection"
     out_dir.mkdir(parents=True, exist_ok=True)
-    stl_path = a.stl or str(out_dir / f"plate_{a.xy:.0f}x{a.xy:.0f}x{a.thickness:.0f}.stl")
+    stl_path = a.stl or str(
+        out_dir / f"plate_{a.xy:.0f}x{a.xy:.0f}x{a.thickness:.0f}.{a.fmt}"
+    )
     png_path = str(Path(stl_path).with_suffix(".png"))
 
     print(f"клеток шахматки: {2 * a.nx - 1} x {2 * a.ny - 1}, слоёв H: {a.nz}")
@@ -101,11 +111,11 @@ def main() -> None:
         L=L,
         alpha_deg=a.alpha,
         output=stl_path,
-        fmt="stl",
+        fmt=a.fmt,
         viz=a.show,
         viz_path=png_path,
     )
-    print(f"STL: {stl_path}")
+    print(f"{a.fmt.upper()}: {stl_path}")
     print(f"PNG: {png_path}")
 
 
